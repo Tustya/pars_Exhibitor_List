@@ -1,8 +1,10 @@
 import re
 import time
 import requests
-from bs4 import BeautifulSoup
+import telebot
 import pandas as pd
+from bs4 import BeautifulSoup
+from auth_data import token
 
 
 def collect_categories():
@@ -21,13 +23,15 @@ def collect_urls(categories):
     all_urls = {}
     for i in range(len(categories))[:]:
         all_urls[categories[i]] = []
-        r_pag = requests.get(f'https://en.hostistanbulfair.com/2023-exhibitor-list.html?search=&MainProductCategories={i + 1}&ProductCategories=&CompanyType=&Countries=&Halls=&letter=')
+        r_pag = requests.get(
+            f'https://en.hostistanbulfair.com/2023-exhibitor-list.html?search=&MainProductCategories={i + 1}&ProductCategories=&CompanyType=&Countries=&Halls=&letter=')
         soup = BeautifulSoup(r_pag.content, 'html.parser')
         last_page = soup.find('div', class_='pagination').find_all('a')[-2].text
         for k in range(int(last_page))[:]:
-            print(f'Категория {categories[i]}, стр {k+1}')
-            time.sleep(5)
-            r = requests.get(f'https://en.hostistanbulfair.com/2023-exhibitor-list.html?p={k+1}&search=&MainProductCategories={i+1}&ProductCategories=&CompanyType=&Countries=&Halls=&letter=')
+            print(f'Категория {categories[i]}, стр {k + 1}')
+            time.sleep(1)
+            r = requests.get(
+                f'https://en.hostistanbulfair.com/2023-exhibitor-list.html?p={k + 1}&search=&MainProductCategories={i + 1}&ProductCategories=&CompanyType=&Countries=&Halls=&letter=')
             soup = BeautifulSoup(r.content, 'html.parser')
             url_list = soup.find('ul', class_='katilimciListesiBlok')
             url_list = url_list.find_all('a')
@@ -74,6 +78,16 @@ def collect_info(all_urls):
         cat_sheets[item].to_excel(writer, sheet_name=re.sub("[:*?/]", "", item)[:30], index=False)
 
     writer.close()
+
+    return 'data.xlsx'
+
+
+def full_collect():
+    categories = collect_categories()
+    all_urls = collect_urls(categories)
+    file = collect_info(all_urls)
+
+    return file
 
 
 if __name__ == '__main__':
